@@ -11,47 +11,24 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing } from '../constants/theme';
+import { useReaderSettings } from '../context/ReaderSettingsContext';
+import ReaderSettingsPanel from '../components/ReaderSettingsPanel';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const THEMES = {
-  light: {
-    bg: Colors.readerBg,
-    text: Colors.readerText,
-    subText: '#6E6E73',
-    border: 'rgba(0,0,0,0.08)',
-    navDisabled: '#C7C7CC',
-    progressTrack: '#E5E5EA',
-    progressFill: Colors.accent,
-    icon: '#1C1C1E',
-  },
-  sepia: {
-    bg: Colors.readerSepia,
-    text: '#3E2723',
-    subText: '#8D6E63',
-    border: 'rgba(62,39,35,0.12)',
-    navDisabled: '#D7CCC8',
-    progressTrack: '#D7CCC8',
-    progressFill: '#8D6E63',
-    icon: '#3E2723',
-  },
-  dark: {
-    bg: Colors.readerDark,
-    text: '#E5E5EA',
-    subText: '#8E8E93',
-    border: 'rgba(255,255,255,0.08)',
-    navDisabled: '#48484A',
-    progressTrack: '#48484A',
-    progressFill: '#0A84FF',
-    icon: '#E5E5EA',
-  },
-};
+function DropCapParagraph({ text, theme, isFirst, fontSize, lineHeight, fontFamily, boldText, textAlign }) {
+  const paragraphStyle = {
+    fontSize,
+    lineHeight,
+    color: theme.text,
+    fontFamily,
+    fontWeight: boldText ? '700' : '400',
+    textAlign,
+  };
 
-function DropCapParagraph({ text, theme, isFirst }) {
   if (!isFirst || text.length < 2) {
     return (
-      <Text style={[styles.paragraph, Typography.reader, { color: theme.text }]}>
+      <Text style={[styles.paragraph, paragraphStyle]}>
         {text}
       </Text>
     );
@@ -61,8 +38,8 @@ function DropCapParagraph({ text, theme, isFirst }) {
   const rest = text.slice(1);
 
   return (
-    <Text style={[styles.paragraph, Typography.reader, { color: theme.text }]}>
-      <Text style={[styles.dropCap, { color: theme.text }]}>{firstLetter}</Text>
+    <Text style={[styles.paragraph, paragraphStyle]}>
+      <Text style={[styles.dropCap, { color: theme.text, fontFamily }]}>{firstLetter}</Text>
       {rest}
     </Text>
   );
@@ -72,16 +49,26 @@ export default function ReaderScreen({ navigation, route }) {
   const { book, chapterIndex: initialChapterIndex = 0 } = route.params;
   const [chapterIndex, setChapterIndex] = useState(initialChapterIndex);
   const [showUI, setShowUI] = useState(true);
-  const [themeKey, setThemeKey] = useState('light');
+  const [showSettings, setShowSettings] = useState(false);
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef(null);
 
-  const theme = THEMES[themeKey];
+  const {
+    settings,
+    theme,
+    fontSize,
+    margin,
+    fontFamily,
+    boldText,
+  } = useReaderSettings();
+
   const chapter = book.chapters[chapterIndex];
   const totalChapters = book.chapters.length;
   const progress = totalChapters > 0 ? chapterIndex / (totalChapters - 1) : 0;
 
   const uiOpacity = useRef(new Animated.Value(1)).current;
+
+  const lineHeight = Math.round(fontSize * settings.lineSpacing);
 
   useEffect(() => {
     Animated.timing(uiOpacity, {
@@ -96,18 +83,18 @@ export default function ReaderScreen({ navigation, route }) {
   }, [chapterIndex]);
 
   const toggleUI = useCallback(() => {
+    if (showSettings) {
+      setShowSettings(false);
+      return;
+    }
     setShowUI((prev) => !prev);
-  }, []);
+  }, [showSettings]);
 
   const goToChapter = useCallback((index) => {
     if (index >= 0 && index < totalChapters) {
       setChapterIndex(index);
     }
   }, [totalChapters]);
-
-  const cycleTheme = useCallback(() => {
-    setThemeKey((prev) => (prev === 'light' ? 'sepia' : prev === 'sepia' ? 'dark' : 'light'));
-  }, []);
 
   const paragraphs = chapter.content.split('\n\n').filter(Boolean);
 
@@ -116,6 +103,21 @@ export default function ReaderScreen({ navigation, route }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      {/* Brightness overlay */}
+      {settings.brightness < 1 && (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: '#000',
+              opacity: 1 - settings.brightness,
+              zIndex: 50,
+              pointerEvents: 'none',
+            },
+          ]}
+        />
+      )}
+
       {/* Scrollable Content */}
       <ScrollView
         ref={scrollViewRef}
@@ -129,17 +131,22 @@ export default function ReaderScreen({ navigation, route }) {
             style={[
               styles.content,
               {
-                paddingTop: insets.top + 52,
-                paddingBottom: insets.bottom + 100,
-                paddingHorizontal: 24,
+                paddingTop: insets.top + 60,
+                paddingBottom: insets.bottom + 120,
+                paddingHorizontal: margin,
               },
             ]}
           >
             <Text
               style={[
                 styles.chapterTitle,
-                Typography.title2,
-                { color: theme.text },
+                {
+                  fontSize: fontSize + 4,
+                  lineHeight: lineHeight + 4,
+                  color: theme.text,
+                  fontFamily,
+                  fontWeight: boldText ? '700' : '600',
+                },
               ]}
             >
               {chapter.title}
@@ -151,6 +158,11 @@ export default function ReaderScreen({ navigation, route }) {
                 text={paragraph}
                 theme={theme}
                 isFirst={index === 0}
+                fontSize={fontSize}
+                lineHeight={lineHeight}
+                fontFamily={fontFamily}
+                boldText={boldText}
+                textAlign={settings.textAlign}
               />
             ))}
           </View>
@@ -182,7 +194,6 @@ export default function ReaderScreen({ navigation, route }) {
           <Text
             style={[
               styles.headerBookTitle,
-              Typography.caption2,
               { color: theme.subText },
             ]}
             numberOfLines={1}
@@ -192,8 +203,12 @@ export default function ReaderScreen({ navigation, route }) {
           <Text
             style={[
               styles.headerChapterTitle,
-              Typography.subheadline,
-              { color: theme.text, fontWeight: '600' },
+              {
+                color: theme.text,
+                fontWeight: '600',
+                fontSize: 15,
+                lineHeight: 20,
+              },
             ]}
             numberOfLines={1}
           >
@@ -203,24 +218,7 @@ export default function ReaderScreen({ navigation, route }) {
 
         <View style={styles.headerRight}>
           <Pressable
-            onPress={cycleTheme}
-            style={styles.headerButtonSmall}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons
-              name={
-                themeKey === 'light'
-                  ? 'sunny-outline'
-                  : themeKey === 'sepia'
-                  ? 'partly-sunny-outline'
-                  : 'moon-outline'
-              }
-              size={20}
-              color={theme.icon}
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => {}}
+            onPress={() => setShowSettings(true)}
             style={styles.headerButtonSmall}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -285,7 +283,6 @@ export default function ReaderScreen({ navigation, route }) {
             <Text
               style={[
                 styles.navButtonText,
-                Typography.subheadline,
                 {
                   color: isFirstChapter ? theme.navDisabled : theme.icon,
                   fontWeight: '500',
@@ -307,7 +304,6 @@ export default function ReaderScreen({ navigation, route }) {
             <Text
               style={[
                 styles.navButtonText,
-                Typography.subheadline,
                 {
                   color: isLastChapter ? theme.navDisabled : theme.icon,
                   fontWeight: '500',
@@ -324,6 +320,9 @@ export default function ReaderScreen({ navigation, route }) {
           </Pressable>
         </View>
       </Animated.View>
+
+      {/* Settings Panel */}
+      <ReaderSettingsPanel visible={showSettings} onClose={() => setShowSettings(false)} />
     </View>
   );
 }
@@ -340,20 +339,18 @@ const styles = StyleSheet.create({
   },
   content: {
     minHeight: SCREEN_HEIGHT,
-    paddingTop: 20,
   },
   chapterTitle: {
-    marginBottom: Spacing.xxl,
-    marginTop: Spacing.lg,
+    marginBottom: 28,
+    marginTop: 8,
   },
   paragraph: {
-    marginBottom: Spacing.lg,
+    marginBottom: 16,
   },
   dropCap: {
     fontSize: 48,
     fontWeight: '700',
     lineHeight: 44,
-    fontFamily: 'Georgia',
     marginRight: 4,
   },
   header: {
@@ -364,8 +361,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.sm,
+    paddingHorizontal: 12,
+    paddingBottom: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
     zIndex: 10,
   },
@@ -393,11 +390,14 @@ const styles = StyleSheet.create({
   headerTitles: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: 8,
   },
   headerBookTitle: {
     marginBottom: 2,
     letterSpacing: 0.4,
+    fontSize: 11,
+    fontWeight: '500',
+    lineHeight: 14,
   },
   headerChapterTitle: {
     fontWeight: '600',
@@ -407,13 +407,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.sm,
+    paddingHorizontal: 20,
+    paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     zIndex: 10,
   },
   progressWrapper: {
-    marginBottom: Spacing.sm,
+    marginBottom: 8,
   },
   slider: {
     width: '100%',
@@ -426,8 +426,10 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
   progressLabel: {
-    ...Typography.caption2,
+    fontSize: 11,
     fontWeight: '500',
+    lineHeight: 14,
+    letterSpacing: 0.2,
   },
   navRow: {
     flexDirection: 'row',
@@ -437,8 +439,8 @@ const styles = StyleSheet.create({
   navButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     minHeight: 40,
   },
   navButtonPressed: {
@@ -446,5 +448,7 @@ const styles = StyleSheet.create({
   },
   navButtonText: {
     marginHorizontal: 4,
+    fontSize: 15,
+    lineHeight: 20,
   },
 });
