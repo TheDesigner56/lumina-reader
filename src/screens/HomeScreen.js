@@ -40,7 +40,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.header}>
         <View>
           <Text style={styles.brandSub}>Good evening</Text>
-          <Text style={styles.brandName}>Lumina</Text>
+          <Text style={styles.brandName}>Uni Reader</Text>
         </View>
         <Pressable
           onPress={() => {}}

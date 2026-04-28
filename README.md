@@ -1,8 +1,8 @@
-# Lumina — Unlimited Reader
+# Uni Reader
 
 A beautiful, premium iOS reading app built with React Native & Expo. Discover and read a vast library of books with an immersive, distraction-free reader experience.
 
-![Dark Theme](https://img.shields.io/badge/theme-dark-0D0D0F)
+![Theme](https://img.shields.io/badge/theme-light-F5F5F7)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Web-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -13,7 +13,7 @@ A beautiful, premium iOS reading app built with React Native & Expo. Discover an
 - **Continue Reading** — Pick up exactly where you left off with progress tracking
 - **Discover** — Search and filter by genre with a beautiful grid layout
 - **Profile & Stats** — Track reading streaks, books finished, and hours read
-- **Dark Mode** — Elegant dark theme designed for comfortable nighttime reading
+- **Reader Settings** — Fonts, themes, spacing, margins, alignment, brightness (Apple Books & Kindle inspired)
 
 ## Tech Stack
 
@@ -24,7 +24,7 @@ A beautiful, premium iOS reading app built with React Native & Expo. Discover an
 
 ## Live Demo
 
-Test the web version here: [https://unlimited-reader.vercel.app](https://unlimited-reader.vercel.app)
+Test the web version here: [https://uni-reader.vercel.app](https://uni-reader.vercel.app)
 
 ## Running Locally
 
@@ -58,7 +58,6 @@ src/
 
 - [ ] Pro plan with unlimited offline downloads
 - [ ] Audiobook mode
-- [ ] Custom fonts & themes
 - [ ] Social features (book clubs, reviews)
 - [ ] AI-powered recommendations
 

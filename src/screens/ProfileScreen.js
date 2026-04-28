@@ -143,7 +143,7 @@ export default function ProfileScreen({ navigation }) {
       >
         <View style={styles.bannerContent}>
           <View>
-            <Text style={[styles.bannerTitle, Typography.headline]}>Lumina Pro</Text>
+            <Text style={[styles.bannerTitle, Typography.headline]}>Uni Reader Pro</Text>
             <Text style={[styles.bannerSubtitle, Typography.subheadline]}>
               Unlimited offline reading
             </Text>
