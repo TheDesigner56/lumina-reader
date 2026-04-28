@@ -5,194 +5,152 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
-  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { useReading } from '../context/ReadingContext';
-import { books } from '../data/books';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../constants/theme';
-import StatCard from '../components/StatCard';
-import SettingRow from '../components/SettingRow';
+import { Colors, Typography, Spacing, BorderRadius } from '../constants/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BOOK_COVER_WIDTH = 110;
-const BOOK_COVER_HEIGHT = 160;
-
-function BookCover({ book, onPress }) {
+function GroupedSection({ title, children }) {
   return (
-    <Pressable onPress={onPress} style={styles.bookCoverContainer}>
-      <LinearGradient
-        colors={book.coverGradient}
-        style={styles.bookCover}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Text style={styles.bookCoverTitle} numberOfLines={2}>
-          {book.title}
-        </Text>
-        <Text style={styles.bookCoverAuthor} numberOfLines={1}>
-          {book.author}
-        </Text>
-      </LinearGradient>
+    <View style={styles.sectionWrapper}>
+      {title && (
+        <Text style={[styles.sectionTitle, Typography.caption2]}>{title}</Text>
+      )}
+      <View style={styles.groupedCard}>{children}</View>
+    </View>
+  );
+}
+
+function SettingRowItem({ icon, iconBg, title, onPress, isFirst, isLast, showChevron = true }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.row,
+        isFirst && styles.rowFirst,
+        isLast && styles.rowLast,
+        !isLast && styles.rowBorder,
+        pressed && styles.rowPressed,
+      ]}
+    >
+      <View style={[styles.rowIconContainer, { backgroundColor: iconBg || '#E5E5EA' }]}>
+        <Ionicons name={icon} size={18} color="#FFFFFF" />
+      </View>
+      <Text style={[styles.rowTitle, Typography.body]}>{title}</Text>
+      {showChevron && (
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color={Colors.tertiary}
+          style={styles.rowChevron}
+        />
+      )}
     </Pressable>
+  );
+}
+
+function StatCardItem({ value, label }) {
+  return (
+    <View style={styles.statCard}>
+      <Text style={[styles.statValue, Typography.title2]}>{value}</Text>
+      <Text style={[styles.statLabel, Typography.caption2]}>{label}</Text>
+    </View>
   );
 }
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { readingStats, savedBooks } = useReading();
+  const { readingStats } = useReading();
 
-  const savedBooksData = savedBooks
-    .map((id) => books.find((b) => b.id === id))
-    .filter(Boolean);
-
-  const handleBookPress = (book) => {
-    navigation.navigate('BookDetail', { book });
-  };
-
-  const accountSettings = [
-    { icon: 'person-outline', title: 'Edit Profile' },
-    { icon: 'notifications-outline', title: 'Notifications' },
-    { icon: 'download-outline', title: 'Downloaded Books' },
+  const collections = [
+    { icon: 'bookmark-outline', title: 'Want to Read', iconBg: '#FF9500' },
+    { icon: 'checkmark-circle-outline', title: 'Finished', iconBg: '#34C759' },
+    { icon: 'heart-outline', title: 'Favorites', iconBg: '#FF3B30' },
   ];
 
-  const preferenceSettings = [
-    { icon: 'book-outline', title: 'Reading Preferences' },
-    { icon: 'moon-outline', title: 'Appearance', value: 'Dark' },
-  ];
-
-  const supportSettings = [
-    { icon: 'help-circle-outline', title: 'Help Center' },
-    { icon: 'document-text-outline', title: 'Terms of Service' },
-    { icon: 'shield-checkmark-outline', title: 'Privacy Policy' },
+  const settings = [
+    { icon: 'book-outline', title: 'Reading Preferences', iconBg: '#007AFF' },
+    { icon: 'notifications-outline', title: 'Notifications', iconBg: '#5856D6' },
+    { icon: 'download-outline', title: 'Downloaded Books', iconBg: '#32ADE6' },
+    { icon: 'help-circle-outline', title: 'Help', iconBg: '#34C759' },
+    { icon: 'information-circle-outline', title: 'About', iconBg: '#8E8E93' },
   ];
 
   return (
     <ScrollView
       style={[styles.container, { paddingTop: insets.top }]}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xl }}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <Text style={[styles.pageTitle, Typography.largeTitle]}>Profile</Text>
+
+      {/* Profile Card */}
+      <View style={styles.profileCard}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>JD</Text>
+          <Text style={[styles.avatarText, Typography.title2]}>JD</Text>
         </View>
-        <Text style={styles.name}>Jane Doe</Text>
-        <Text style={styles.email}>jane@example.com</Text>
+        <Text style={[styles.name, Typography.headline]}>Jane Doe</Text>
+        <Text style={[styles.email, Typography.subheadline]}>jane@example.com</Text>
       </View>
 
       {/* Stats Row */}
       <View style={styles.statsRow}>
-        <StatCard
-          label="Books Read"
-          value={String(readingStats.booksRead)}
-          style={styles.statCard}
-        />
-        <StatCard
-          label="Hours Read"
-          value={String(readingStats.hoursRead)}
-          style={styles.statCard}
-        />
-        <StatCard
-          label="Streak"
-          value={`${readingStats.streak} days`}
-          style={styles.statCard}
-        />
+        <StatCardItem value={String(readingStats.booksRead)} label="Books Read" />
+        <StatCardItem value={`${readingStats.hoursRead}h`} label="Hours Read" />
+        <StatCardItem value={`${readingStats.streak} days`} label="Streak" />
       </View>
 
-      {/* My Library */}
-      <View style={styles.librarySection}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>My Library</Text>
-          <Pressable onPress={() => {}}>
-            <Text style={styles.seeAll}>See All</Text>
-          </Pressable>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.libraryScroll}
-        >
-          {savedBooksData.map((book) => (
-            <BookCover
-              key={book.id}
-              book={book}
-              onPress={() => handleBookPress(book)}
-            />
-          ))}
-        </ScrollView>
-      </View>
+      {/* My Collections */}
+      <GroupedSection title="MY COLLECTIONS">
+        {collections.map((item, index) => (
+          <SettingRowItem
+            key={item.title}
+            icon={item.icon}
+            iconBg={item.iconBg}
+            title={item.title}
+            isFirst={index === 0}
+            isLast={index === collections.length - 1}
+            onPress={() => {}}
+          />
+        ))}
+      </GroupedSection>
 
-      {/* Account Section */}
-      <Text style={styles.sectionHeader}>Account</Text>
-      {accountSettings.map((item, index) => (
-        <SettingRow
-          key={item.title}
-          icon={item.icon}
-          title={item.title}
-          isFirst={index === 0}
-          isLast={index === accountSettings.length - 1}
-          onPress={() => {}}
-        />
-      ))}
-
-      {/* Preferences Section */}
-      <Text style={styles.sectionHeader}>Preferences</Text>
-      {preferenceSettings.map((item, index) => (
-        <SettingRow
-          key={item.title}
-          icon={item.icon}
-          title={item.title}
-          value={item.value}
-          isFirst={index === 0}
-          isLast={index === preferenceSettings.length - 1}
-          onPress={() => {}}
-        />
-      ))}
-
-      {/* Support Section */}
-      <Text style={styles.sectionHeader}>Support</Text>
-      {supportSettings.map((item, index) => (
-        <SettingRow
-          key={item.title}
-          icon={item.icon}
-          title={item.title}
-          isFirst={index === 0}
-          isLast={index === supportSettings.length - 1}
-          onPress={() => {}}
-        />
-      ))}
+      {/* Settings */}
+      <GroupedSection title="SETTINGS">
+        {settings.map((item, index) => (
+          <SettingRowItem
+            key={item.title}
+            icon={item.icon}
+            iconBg={item.iconBg}
+            title={item.title}
+            isFirst={index === 0}
+            isLast={index === settings.length - 1}
+            onPress={() => {}}
+          />
+        ))}
+      </GroupedSection>
 
       {/* Upgrade Banner */}
-      <Pressable onPress={() => {}} style={styles.bannerContainer}>
-        <LinearGradient
-          colors={['#8B5CF6', '#A78BFA']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.banner}
-        >
-          <View style={styles.bannerContent}>
-            <View>
-              <Text style={styles.bannerTitle}>Upgrade to Pro</Text>
-              <Text style={styles.bannerSubtitle}>
-                Unlock unlimited access
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color="#fff"
-              style={styles.bannerChevron}
-            />
+      <Pressable
+        onPress={() => {}}
+        style={({ pressed }) => [
+          styles.banner,
+          pressed && styles.bannerPressed,
+        ]}
+      >
+        <View style={styles.bannerContent}>
+          <View>
+            <Text style={[styles.bannerTitle, Typography.headline]}>Lumina Pro</Text>
+            <Text style={[styles.bannerSubtitle, Typography.subheadline]}>
+              Unlimited offline reading
+            </Text>
           </View>
-        </LinearGradient>
+          <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
+        </View>
       </Pressable>
-
-      <View style={{ height: insets.bottom + Spacing.xl }} />
     </ScrollView>
   );
 }
@@ -202,107 +160,123 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  content: {
-    paddingBottom: Spacing.lg,
+  pageTitle: {
+    color: Colors.primary,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
-  header: {
+  profileCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.xl,
+    marginHorizontal: Spacing.lg,
+    padding: Spacing.xl,
     alignItems: 'center',
-    paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing.md,
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.surfaceLight,
+    backgroundColor: '#E5E5EA',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.md,
   },
   avatarText: {
-    ...Typography.h2,
-    color: Colors.primary,
+    color: Colors.secondary,
   },
   name: {
-    ...Typography.h3,
     color: Colors.primary,
     marginBottom: Spacing.xs,
   },
   email: {
-    ...Typography.bodySmall,
-    color: Colors.primaryMuted,
+    color: Colors.secondary,
   },
   statsRow: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.xl,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.xl,
     gap: Spacing.md,
   },
   statCard: {
     flex: 1,
-  },
-  librarySection: {
-    marginBottom: Spacing.xl,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.xl,
+    paddingVertical: Spacing.md,
     alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.md,
+    justifyContent: 'center',
+  },
+  statValue: {
+    color: Colors.primary,
+    marginBottom: Spacing.xs,
+  },
+  statLabel: {
+    color: Colors.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  sectionWrapper: {
+    marginTop: Spacing.xxl,
+    marginHorizontal: Spacing.lg,
   },
   sectionTitle: {
-    ...Typography.h4,
-    color: Colors.primary,
-  },
-  seeAll: {
-    ...Typography.bodySmall,
     color: Colors.secondary,
-    fontWeight: '600',
+    marginBottom: Spacing.sm,
+    marginLeft: Spacing.md,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
-  libraryScroll: {
+  groupedCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.xl,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
     paddingHorizontal: Spacing.md,
-    gap: Spacing.md,
+    backgroundColor: Colors.surface,
   },
-  bookCoverContainer: {
+  rowFirst: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+  },
+  rowLast: {
+    borderBottomLeftRadius: BorderRadius.xl,
+    borderBottomRightRadius: BorderRadius.xl,
+  },
+  rowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.separator,
+  },
+  rowPressed: {
+    opacity: 0.7,
+  },
+  rowIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: Spacing.md,
   },
-  bookCover: {
-    width: BOOK_COVER_WIDTH,
-    height: BOOK_COVER_HEIGHT,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
-    justifyContent: 'flex-end',
-    ...Shadows.small,
-  },
-  bookCoverTitle: {
-    ...Typography.caption,
+  rowTitle: {
+    flex: 1,
     color: Colors.primary,
-    fontWeight: '700',
-    marginBottom: 2,
   },
-  bookCoverAuthor: {
-    fontSize: 10,
-    fontWeight: '400',
-    color: 'rgba(245,245,247,0.7)',
-  },
-  sectionHeader: {
-    ...Typography.caption,
-    color: Colors.primaryMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.sm,
-    marginHorizontal: Spacing.md,
-  },
-  bannerContainer: {
-    marginHorizontal: Spacing.md,
-    marginTop: Spacing.xl,
+  rowChevron: {
+    marginLeft: Spacing.xs,
   },
   banner: {
+    backgroundColor: '#E3F2FD',
     borderRadius: BorderRadius.xl,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.xxl,
     padding: Spacing.lg,
-    ...Shadows.medium,
+  },
+  bannerPressed: {
+    opacity: 0.7,
   },
   bannerContent: {
     flexDirection: 'row',
@@ -310,15 +284,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   bannerTitle: {
-    ...Typography.h4,
-    color: '#fff',
-    marginBottom: 2,
+    color: Colors.primary,
   },
   bannerSubtitle: {
-    ...Typography.bodySmall,
-    color: 'rgba(255,255,255,0.85)',
-  },
-  bannerChevron: {
-    marginLeft: Spacing.sm,
+    color: Colors.secondary,
+    marginTop: 2,
   },
 });

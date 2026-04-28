@@ -9,8 +9,33 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import StarRating from '../components/StarRating';
-import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../constants/theme';
+import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../constants/theme';
+import { books } from '../data/books';
+import BookCard from '../components/BookCard';
+
+function GoldStars({ rating, size = 16 }) {
+  const stars = [];
+  for (let i = 1; i <= 5; i++) {
+    let iconName;
+    if (rating >= i - 0.25) {
+      iconName = 'star';
+    } else if (rating >= i - 0.75) {
+      iconName = 'star-half';
+    } else {
+      iconName = 'star-outline';
+    }
+    stars.push(
+      <Ionicons
+        key={i}
+        name={iconName}
+        size={size}
+        color="#FF9500"
+        style={i < 5 ? styles.starMargin : undefined}
+      />
+    );
+  }
+  return <View style={styles.starsContainer}>{stars}</View>;
+}
 
 export default function BookDetailScreen({ navigation, route }) {
   const { book } = route.params;
@@ -20,119 +45,146 @@ export default function BookDetailScreen({ navigation, route }) {
     navigation.navigate('Reader', { book, chapterIndex });
   };
 
-  const previewChapters = book.chapters.slice(0, 3);
+  const relatedBooks = books.filter((b) => b.id !== book.id).slice(0, 4);
+
+  const handleBookPress = (relatedBook) => {
+    navigation.navigate('BookDetail', { book: relatedBook });
+  };
 
   return (
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: Spacing.xxxl + insets.bottom + 80,
+          paddingBottom: insets.bottom + Spacing.xxxl,
         }}
       >
-        {/* Hero Cover */}
-        <View style={styles.heroContainer}>
-          <LinearGradient
-            colors={book.coverGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.heroGradient, { height: 280 }]}
-          >
-            <View style={[styles.coverContent, { paddingTop: insets.top + Spacing.lg }]}>
-              <Ionicons name="book" size={80} color="rgba(255,255,255,0.15)" />
-            </View>
-          </LinearGradient>
+        {/* Back Chevron */}
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={({ pressed }) => [
+            styles.backChevron,
+            pressed && styles.pressedOpacity,
+          ]}
+        >
+          <Ionicons name="chevron-back" size={32} color={Colors.primary} />
+        </Pressable>
 
-          {/* Back Button */}
-          <Pressable
-            onPress={() => navigation.goBack()}
-            style={[styles.backButton, { top: insets.top + Spacing.md }]}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.primary} />
-          </Pressable>
+        {/* Hero Cover */}
+        <View style={styles.heroSection}>
+          <View style={styles.coverWrapper}>
+            <LinearGradient
+              colors={book.coverGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cover}
+            >
+              <View style={styles.coverOverlay} />
+            </LinearGradient>
+          </View>
+
+          {/* Title & Author */}
+          <Text style={[styles.title, Typography.title1]}>{book.title}</Text>
+          <Text style={[styles.author, Typography.subheadline]}>{book.author}</Text>
+
+          {/* Rating */}
+          <View style={styles.ratingRow}>
+            <GoldStars rating={book.rating} />
+            <Text style={styles.ratingValue}>{book.rating.toFixed(1)}</Text>
+            <Text style={styles.ratingCount}>(128 Ratings)</Text>
+          </View>
+
+          {/* Action Row */}
+          <View style={styles.actionRow}>
+            <Pressable
+              onPress={() => handleStartReading(0)}
+              style={({ pressed }) => [
+                styles.readButton,
+                pressed && styles.pressedOpacity,
+              ]}
+            >
+              <Text style={styles.readButtonText}>Read</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => handleStartReading(0)}
+              style={({ pressed }) => [
+                styles.sampleButton,
+                pressed && styles.pressedOpacity,
+              ]}
+            >
+              <Text style={styles.sampleButtonText}>Sample</Text>
+            </Pressable>
+          </View>
         </View>
 
-        {/* Content */}
-        <View style={styles.content}>
-          <Text style={[styles.title, Typography.h1]}>{book.title}</Text>
-          <Text style={[styles.author, Typography.body]}>{book.author}</Text>
+        {/* Divider */}
+        <View style={styles.divider} />
 
-          <View style={styles.ratingRow}>
-            <StarRating rating={book.rating} size={16} />
-            <Text style={styles.ratingText}>{book.rating.toFixed(1)}</Text>
+        {/* Description */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, Typography.headline]}>Description</Text>
+          <Text style={[styles.synopsis, Typography.body]}>{book.synopsis}</Text>
+        </View>
+
+        {/* Info Grid */}
+        <View style={styles.infoGrid}>
+          <View style={styles.infoItem}>
+            <Text style={styles.infoValue}>{book.pages}</Text>
+            <Text style={styles.infoLabel}>Pages</Text>
           </View>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{book.pages}</Text>
-              <Text style={styles.statLabel}>Pages</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{book.readTime}</Text>
-              <Text style={styles.statLabel}>Read time</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={[styles.categoryPill, { backgroundColor: book.coverGradient[0] }]}>
-              <Text style={styles.categoryText}>
-                {book.category.charAt(0).toUpperCase() + book.category.slice(1)}
-              </Text>
-            </View>
+          <View style={styles.infoDivider} />
+          <View style={styles.infoItem}>
+            <Text style={styles.infoValue}>{book.readTime}</Text>
+            <Text style={styles.infoLabel}>Read Time</Text>
           </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, Typography.h3]}>Synopsis</Text>
-            <Text style={[styles.synopsis, Typography.body]}>{book.synopsis}</Text>
+          <View style={styles.infoDivider} />
+          <View style={styles.infoItem}>
+            <Text style={styles.infoValue}>
+              {book.category.charAt(0).toUpperCase() + book.category.slice(1)}
+            </Text>
+            <Text style={styles.infoLabel}>Category</Text>
           </View>
+        </View>
 
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, Typography.h3]}>Table of Contents</Text>
-            {previewChapters.map((chapter, index) => (
+        {/* Chapters */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, Typography.headline]}>Table of Contents</Text>
+          <View style={styles.chaptersList}>
+            {book.chapters.map((chapter, index) => (
               <Pressable
                 key={index}
                 onPress={() => handleStartReading(index)}
                 style={({ pressed }) => [
                   styles.chapterRow,
-                  pressed && styles.chapterRowPressed,
+                  pressed && styles.pressedOpacity,
                 ]}
               >
-                <View style={styles.chapterInfo}>
-                  <Text style={styles.chapterNumber}>Chapter {index + 1}</Text>
-                  <Text style={[styles.chapterTitle, Typography.h4]}>{chapter.title}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={Colors.primaryMuted} />
+                <Text style={[styles.chapterTitle, Typography.body]}>{chapter.title}</Text>
+                <Ionicons name="chevron-forward" size={18} color={Colors.tertiary} />
               </Pressable>
             ))}
-            {book.chapters.length > 3 && (
-              <Text style={styles.moreChapters}>
-                +{book.chapters.length - 3} more chapters
-              </Text>
-            )}
           </View>
         </View>
-      </ScrollView>
 
-      {/* Sticky Start Reading Button */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
-        <Pressable
-          onPress={() => handleStartReading(0)}
-          style={({ pressed }) => [
-            styles.startButton,
-            pressed && styles.startButtonPressed,
-          ]}
-        >
-          <LinearGradient
-            colors={[Colors.secondary, Colors.secondaryLight]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.startButtonGradient}
+        {/* Related Books */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, Typography.headline]}>Related Books</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.relatedContent}
           >
-            <Text style={[styles.startButtonText, Typography.button]}>Start Reading</Text>
-            <Ionicons name="arrow-forward" size={18} color={Colors.primary} style={styles.startButtonIcon} />
-          </LinearGradient>
-        </Pressable>
-      </View>
+            {relatedBooks.map((relatedBook) => (
+              <BookCard
+                key={relatedBook.id}
+                book={relatedBook}
+                onPress={() => handleBookPress(relatedBook)}
+                size="small"
+              />
+            ))}
+          </ScrollView>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -142,160 +194,163 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  heroContainer: {
-    position: 'relative',
+  pressedOpacity: {
+    opacity: 0.7,
   },
-  heroGradient: {
-    width: '100%',
+  backChevron: {
+    marginTop: Spacing.lg,
+    marginLeft: Spacing.lg,
+    width: 44,
+    height: 44,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
-  coverContent: {
-    flex: 1,
-    justifyContent: 'center',
+  heroSection: {
     alignItems: 'center',
-  },
-  backButton: {
-    position: 'absolute',
-    left: Spacing.md,
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.full,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  content: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
+    paddingTop: Spacing.md,
+  },
+  coverWrapper: {
+    ...Shadows.cover,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.xxl,
+  },
+  cover: {
+    width: 200,
+    height: 300,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+  },
+  coverOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   title: {
     color: Colors.primary,
+    textAlign: 'center',
     marginBottom: Spacing.xs,
   },
   author: {
-    color: Colors.primaryMuted,
+    color: Colors.secondary,
+    textAlign: 'center',
     marginBottom: Spacing.md,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
-  ratingText: {
-    ...Typography.bodySmall,
-    color: Colors.primaryMuted,
+  starsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  starMargin: {
+    marginRight: 2,
+  },
+  ratingValue: {
+    ...Typography.caption,
+    color: Colors.secondary,
     fontWeight: '600',
     marginLeft: 6,
   },
-  statsRow: {
+  ratingCount: {
+    ...Typography.caption,
+    color: Colors.tertiary,
+    marginLeft: 4,
+  },
+  actionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.xl,
+    gap: Spacing.md,
+    width: '100%',
   },
-  statItem: {
+  readButton: {
+    flex: 1,
+    backgroundColor: Colors.accent,
+    borderRadius: BorderRadius.lg,
+    height: 50,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: Spacing.lg,
   },
-  statValue: {
-    ...Typography.h4,
+  readButtonText: {
+    ...Typography.button,
+    color: Colors.inverse,
+  },
+  sampleButton: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+    borderRadius: BorderRadius.lg,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sampleButtonText: {
+    ...Typography.button,
     color: Colors.primary,
   },
-  statLabel: {
-    ...Typography.caption,
-    color: Colors.primaryMuted,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: Colors.surfaceLighter,
-    marginRight: Spacing.lg,
-  },
-  categoryPill: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-  },
-  categoryText: {
-    ...Typography.caption,
-    color: Colors.primary,
-    fontWeight: '600',
-    textTransform: 'capitalize',
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.separator,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.xxxl,
+    marginBottom: Spacing.xxxl,
   },
   section: {
-    marginBottom: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.xxxl,
   },
   sectionTitle: {
     color: Colors.primary,
     marginBottom: Spacing.md,
   },
   synopsis: {
-    color: Colors.primaryMuted,
-    lineHeight: 26,
+    color: Colors.secondary,
+    lineHeight: 24,
+  },
+  infoGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.xxxl,
+  },
+  infoItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  infoValue: {
+    ...Typography.headline,
+    color: Colors.primary,
+    marginBottom: 2,
+  },
+  infoLabel: {
+    ...Typography.caption,
+    color: Colors.tertiary,
+  },
+  infoDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 32,
+    backgroundColor: Colors.separator,
+    marginHorizontal: Spacing.lg,
+  },
+  chaptersList: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
   },
   chapterRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.surface,
-  },
-  chapterRowPressed: {
-    backgroundColor: Colors.surface,
-    marginHorizontal: -Spacing.lg,
+    paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.lg,
-  },
-  chapterInfo: {
-    flex: 1,
-  },
-  chapterNumber: {
-    ...Typography.caption,
-    color: Colors.primaryMuted,
-    marginBottom: 2,
-    textTransform: 'uppercase',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.separator,
   },
   chapterTitle: {
     color: Colors.primary,
+    flex: 1,
   },
-  moreChapters: {
-    ...Typography.bodySmall,
-    color: Colors.primaryMuted,
-    marginTop: Spacing.md,
-    textAlign: 'center',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    backgroundColor: Colors.background,
-    borderTopWidth: 1,
-    borderTopColor: Colors.surface,
-  },
-  startButton: {
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    ...Shadows.medium,
-  },
-  startButtonPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  startButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.lg,
-  },
-  startButtonText: {
-    color: Colors.primary,
-  },
-  startButtonIcon: {
-    marginLeft: 8,
+  relatedContent: {
+    paddingRight: Spacing.lg,
   },
 });

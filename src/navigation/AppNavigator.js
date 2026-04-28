@@ -1,11 +1,12 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { BlurView } from 'expo-blur';
 import { View, StyleSheet, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 
-import HomeScreen from '../screens/HomeScreen';
-import DiscoverScreen from '../screens/DiscoverScreen';
+import ReadingNowScreen from '../screens/ReadingNowScreen';
+import LibraryScreen from '../screens/LibraryScreen';
+import SearchScreen from '../screens/SearchScreen';
 import BookDetailScreen from '../screens/BookDetailScreen';
 import ReaderScreen from '../screens/ReaderScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -18,7 +19,7 @@ function TabBarIcon({ name, color, size }) {
   return <Ionicons name={name} size={size} color={color} />;
 }
 
-function HomeTabs() {
+function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
@@ -26,38 +27,46 @@ function HomeTabs() {
         tabBarStyle: styles.tabBar,
         tabBarBackground: () =>
           Platform.OS === 'ios' ? (
-            <BlurView intensity={80} style={StyleSheet.absoluteFill} tint="dark" />
+            <BlurView intensity={90} style={StyleSheet.absoluteFill} tint="light" />
           ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.blur }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.9)' }]} />
           ),
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.primaryMuted,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
+        tabBarActiveTintColor: Colors.accent,
+        tabBarInactiveTintColor: Colors.tertiary,
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginBottom: 4 },
         tabBarItemStyle: { paddingTop: 6 },
       }}
     >
       <Tab.Screen
-        name="HomeTab"
-        component={HomeScreen}
+        name="ReadingNow"
+        component={ReadingNowScreen}
         options={{
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => <TabBarIcon name="home" color={color} size={size} />,
+          tabBarLabel: 'Reading Now',
+          tabBarIcon: ({ color, size }) => <TabBarIcon name="book-outline" color={color} size={size} />,
         }}
       />
       <Tab.Screen
-        name="DiscoverTab"
-        component={DiscoverScreen}
+        name="Library"
+        component={LibraryScreen}
         options={{
-          tabBarLabel: 'Discover',
-          tabBarIcon: ({ color, size }) => <TabBarIcon name="compass" color={color} size={size} />,
+          tabBarLabel: 'Library',
+          tabBarIcon: ({ color, size }) => <TabBarIcon name="library-outline" color={color} size={size} />,
         }}
       />
       <Tab.Screen
-        name="ProfileTab"
+        name="Search"
+        component={SearchScreen}
+        options={{
+          tabBarLabel: 'Search',
+          tabBarIcon: ({ color, size }) => <TabBarIcon name="search-outline" color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => <TabBarIcon name="person" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <TabBarIcon name="person-outline" color={color} size={size} />,
         }}
       />
     </Tab.Navigator>
@@ -73,14 +82,12 @@ export default function AppNavigator() {
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="Main" component={HomeTabs} />
+      <Stack.Screen name="Main" component={MainTabs} />
       <Stack.Screen name="BookDetail" component={BookDetailScreen} />
       <Stack.Screen
         name="Reader"
         component={ReaderScreen}
-        options={{
-          animation: 'fade',
-        }}
+        options={{ animation: 'fade' }}
       />
     </Stack.Navigator>
   );
@@ -92,7 +99,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    borderTopWidth: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.separator,
     elevation: 0,
     height: 84,
     paddingBottom: 24,
