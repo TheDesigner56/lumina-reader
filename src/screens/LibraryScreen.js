@@ -8,9 +8,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../constants/theme';
 import { books } from '../data/books';
+import { useReading } from '../context/ReadingContext';
+import BookCard from '../components/BookCard';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const NUM_COLUMNS = 3;
@@ -27,7 +28,13 @@ const SEGMENTS = [
 
 export default function LibraryScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const { currentlyReading } = useReading();
   const [activeSegment, setActiveSegment] = useState('all');
+
+  const getProgress = (bookId) => {
+    const entry = currentlyReading.find((item) => item.bookId === bookId);
+    return entry ? entry.progress : 0;
+  };
 
   // Mock filtering: all shows all books, want shows books 1-3, finished shows 4-5
   const filteredBooks = React.useMemo(() => {
@@ -42,27 +49,15 @@ export default function LibraryScreen({ navigation }) {
 
   const renderBookItem = useCallback(
     ({ item }) => (
-      <Pressable
+      <BookCard
+        book={item}
         onPress={() => handleBookPress(item)}
-        style={({ pressed }) => [styles.bookItem, pressed && styles.pressed]}
-      >
-        <View style={styles.coverWrapper}>
-          <LinearGradient
-            colors={item.coverGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.cover}
-          />
-        </View>
-        <Text style={styles.bookTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-        <Text style={styles.bookAuthor} numberOfLines={1}>
-          {item.author}
-        </Text>
-      </Pressable>
+        size="compact"
+        progressBadge={getProgress(item.id)}
+        style={{ width: COVER_WIDTH, marginBottom: Spacing.lg, marginRight: 0 }}
+      />
     ),
-    []
+    [currentlyReading]
   );
 
   const renderSegmentedControl = () => (
@@ -165,32 +160,5 @@ const styles = StyleSheet.create({
   columnWrapper: {
     justifyContent: 'flex-start',
     gap: COLUMN_GAP,
-    marginBottom: Spacing.lg,
-  },
-  bookItem: {
-    width: COVER_WIDTH,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  coverWrapper: {
-    ...Shadows.cover,
-    borderRadius: BorderRadius.sm,
-    marginBottom: Spacing.sm,
-  },
-  cover: {
-    width: COVER_WIDTH,
-    height: COVER_HEIGHT,
-    borderRadius: BorderRadius.sm,
-  },
-  bookTitle: {
-    ...Typography.caption,
-    color: Colors.primary,
-    lineHeight: 18,
-    marginBottom: 2,
-  },
-  bookAuthor: {
-    ...Typography.caption2,
-    color: Colors.secondary,
   },
 });

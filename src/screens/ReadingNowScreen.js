@@ -12,6 +12,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../constants/theme';
 import { books } from '../data/books';
+import { useReading } from '../context/ReadingContext';
+import BookCard from '../components/BookCard';
+import BookProgressBadge from '../components/BookProgressBadge';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -22,10 +25,18 @@ const SMALL_COVER_HEIGHT = 150;
 
 export default function ReadingNowScreen({ navigation }) {
   const insets = useSafeAreaInsets();
+  const { currentlyReading } = useReading();
 
   const heroBook = books[0];
   const wantToRead = [books[1], books[2], books[3]];
   const finished = [books[4], books[5]];
+
+  const getProgress = (bookId) => {
+    const entry = currentlyReading.find((item) => item.bookId === bookId);
+    return entry ? entry.progress : 0;
+  };
+
+  const heroProgress = getProgress(heroBook.id);
 
   const handleBookPress = (book) => {
     navigation.navigate('BookDetail', { book });
@@ -37,12 +48,19 @@ export default function ReadingNowScreen({ navigation }) {
         onPress={() => handleBookPress(heroBook)}
         style={({ pressed }) => [styles.heroCoverWrapper, pressed && styles.pressed]}
       >
-        <LinearGradient
-          colors={heroBook.coverGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.heroCover}
-        />
+        <View style={{ position: 'relative' }}>
+          <LinearGradient
+            colors={heroBook.coverGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCover}
+          />
+          {heroProgress > 0 && (
+            <View style={styles.heroBadge}>
+              <BookProgressBadge progress={heroProgress} size="medium" />
+            </View>
+          )}
+        </View>
       </Pressable>
 
       <Text style={styles.heroTitle} numberOfLines={2}>
@@ -53,9 +71,9 @@ export default function ReadingNowScreen({ navigation }) {
       {/* Progress bar */}
       <View style={styles.progressContainer}>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: '34%' }]} />
+          <View style={[styles.progressFill, { width: `${heroProgress * 100}%` }]} />
         </View>
-        <Text style={styles.progressCaption}>34%</Text>
+        <Text style={styles.progressCaption}>{Math.round(heroProgress * 100)}%</Text>
       </View>
 
       {/* Action buttons */}
@@ -64,7 +82,7 @@ export default function ReadingNowScreen({ navigation }) {
           onPress={() => navigation.navigate('Reader', { book: heroBook })}
           style={({ pressed }) => [styles.readButton, pressed && styles.pressed]}
         >
-          <Text style={styles.readButtonText}>Read</Text>
+          <Text style={styles.readButtonText}>{heroProgress > 0 ? 'Continue' : 'Read'}</Text>
         </Pressable>
         <Pressable
           onPress={() => handleBookPress(heroBook)}
@@ -76,33 +94,41 @@ export default function ReadingNowScreen({ navigation }) {
     </View>
   );
 
-  const renderHorizontalBook = (book, size = 'small', showCheckmark = false) => (
-    <Pressable
-      key={book.id}
-      onPress={() => handleBookPress(book)}
-      style={({ pressed }) => [
-        styles.horizontalBook,
-        pressed && styles.pressed,
-      ]}
-    >
-      <View style={size === 'small' ? styles.smallCoverWrapper : styles.finishedCoverWrapper}>
-        <LinearGradient
-          colors={book.coverGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={size === 'small' ? styles.smallCover : styles.finishedCover}
-        />
-        {showCheckmark && (
-          <View style={styles.checkmarkBadge}>
-            <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
-          </View>
-        )}
-      </View>
-      <Text style={styles.horizontalTitle} numberOfLines={2}>
-        {book.title}
-      </Text>
-    </Pressable>
-  );
+  const renderHorizontalBook = (book, showCheckmark = false) => {
+    const progress = getProgress(book.id);
+    return (
+      <Pressable
+        key={book.id}
+        onPress={() => handleBookPress(book)}
+        style={({ pressed }) => [
+          styles.horizontalBook,
+          pressed && styles.pressed,
+        ]}
+      >
+        <View style={styles.smallCoverWrapper}>
+          <LinearGradient
+            colors={book.coverGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.smallCover}
+          />
+          {progress > 0 && !showCheckmark && (
+            <View style={styles.checkmarkBadge}>
+              <BookProgressBadge progress={progress} size="small" />
+            </View>
+          )}
+          {showCheckmark && (
+            <View style={styles.checkmarkBadge}>
+              <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
+            </View>
+          )}
+        </View>
+        <Text style={styles.horizontalTitle} numberOfLines={2}>
+          {book.title}
+        </Text>
+      </Pressable>
+    );
+  };
 
   return (
     <ScrollView
@@ -132,7 +158,15 @@ export default function ReadingNowScreen({ navigation }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalContent}
         >
-          {wantToRead.map((book) => renderHorizontalBook(book, 'small'))}
+          {wantToRead.map((book) => (
+            <BookCard
+              key={book.id}
+              book={book}
+              onPress={() => handleBookPress(book)}
+              size="small"
+              progressBadge={getProgress(book.id)}
+            />
+          ))}
         </ScrollView>
       </View>
 
@@ -144,7 +178,7 @@ export default function ReadingNowScreen({ navigation }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.horizontalContent}
         >
-          {finished.map((book) => renderHorizontalBook(book, 'small', true))}
+          {finished.map((book) => renderHorizontalBook(book, true))}
         </ScrollView>
       </View>
     </ScrollView>
@@ -198,6 +232,12 @@ const styles = StyleSheet.create({
     width: HERO_COVER_WIDTH,
     height: HERO_COVER_HEIGHT,
     borderRadius: BorderRadius.md,
+  },
+  heroBadge: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    zIndex: 2,
   },
   heroTitle: {
     ...Typography.title2,
@@ -284,25 +324,16 @@ const styles = StyleSheet.create({
     ...Shadows.cover,
     borderRadius: BorderRadius.sm,
     marginBottom: Spacing.sm,
+    position: 'relative',
   },
   smallCover: {
     width: SMALL_COVER_WIDTH,
     height: SMALL_COVER_HEIGHT,
     borderRadius: BorderRadius.sm,
   },
-  finishedCoverWrapper: {
-    ...Shadows.cover,
-    borderRadius: BorderRadius.sm,
-    marginBottom: Spacing.sm,
-  },
-  finishedCover: {
-    width: SMALL_COVER_WIDTH,
-    height: SMALL_COVER_HEIGHT,
-    borderRadius: BorderRadius.sm,
-  },
   checkmarkBadge: {
     position: 'absolute',
-    top: -6,
+    bottom: -6,
     right: -6,
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.full,
